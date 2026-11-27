@@ -5,7 +5,7 @@
   "checks": [
     {
       "name": "designs",
-      "description": "Every new design in designs/ is scored by Proxima Fusion's ConStellaration scorer (constellaration 0.2.6) and one beats RECORDS.json for its problem. One design per contribution; a high-resolution design takes 10 to 40 minutes. Runs in docker/Dockerfile's image, built once by the host.",
+      "description": "Every new design in designs/ is scored by Proxima Fusion's ConStellaration scorer (constellaration 0.2.6) and one beats RECORDS.json for its problem. One design per contribution; a high-resolution design takes 4 to 10 minutes on one core and more than 2 GB of memory. Runs in docker/Dockerfile's image, built once by the host.",
       "image": "thinkpool-prometheus-cst:1",
       "command": "python -I checker/check_all.py",
       "mode": "fix",
@@ -31,7 +31,7 @@
       "network": false,
       "share_output": true,
       "limits": {
-        "memory_mb": 2048,
+        "memory_mb": 4096,
         "cpus": 2,
         "pids": 256,
         "output_kb": 256,

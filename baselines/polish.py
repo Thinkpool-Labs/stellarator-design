@@ -12,6 +12,12 @@ score - 10 * (feasibility - tolerance), so it can walk through a slightly infeas
 design the high-fidelity re-score calls feasible and better than RECORDS.json is worth a pull request.
 
 Runs on your machine (one core per evaluation; --workers runs several at once).
+
+What it did here (2026-11-27, 2 CPUs, 10 minutes, sigma 2e-3, from the geometrical record): 5
+low-fidelity evaluations of the 10 x 21-mode design, one kept (low-fidelity score 0.980556 -> 0.980595),
+and that one made high-fidelity VMEC++ fail to converge, so it scored nothing. Low fidelity accepting
+what high fidelity can't solve is the first thing a better method has to handle; the default step is
+now smaller.
 """
 from __future__ import annotations
 
@@ -51,7 +57,8 @@ def merit(name: str, b: dict, fidelity: str) -> tuple[float, float, float]:
         m, _ = forward_model.forward_model(s, settings=st)
         feas = float(p.compute_feasibility(m))
         sc = float(p._score(m))
-    except Exception:
+    except Exception as e:
+        print(f"  ({fidelity} fidelity) the forward model failed: {type(e).__name__}: {str(e)[:200]}", file=sys.stderr, flush=True)
         return float("-inf"), 0.0, float("inf")
     if not np.isfinite(sc) or not np.isfinite(feas):
         return float("-inf"), 0.0, float("inf")
@@ -81,7 +88,7 @@ def main() -> int:
     ap.add_argument("--minutes", type=float, default=30)
     ap.add_argument("--out", default="polished.json")
     ap.add_argument("--seed", type=int, default=1)
-    ap.add_argument("--sigma", type=float, default=2e-3)
+    ap.add_argument("--sigma", type=float, default=5e-4)
     ap.add_argument("--workers", type=int, default=1)
     a = ap.parse_args()
     d = json.loads(Path(a.start).read_text())

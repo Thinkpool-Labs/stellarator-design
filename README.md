@@ -58,22 +58,27 @@ only. `designs/example-rotating-ellipse.json` shows the format (it is infeasible
 `checker/check_all.py` scores each new design with `constellaration==0.2.6` at high fidelity, in a
 child process with a 40-minute limit. Anything the scorer can't evaluate (VMEC++ doesn't converge,
 the QI calculation raises) is INVALID. Designs already scored are listed by sha256 in `RECORDS.json`
-and skipped. On the leaderboard's best geometrical design the checker reproduces the leaderboard's
-score to 4e-16.
+and skipped. The checker reproduces the leaderboard's own numbers: the best geometrical design scores
+0.98078088216913 here and there, the best simple-to-build design 0.695579021092883 (identical), and
+a member of the best MHD-stable set lands on its published point exactly.
 
-Scoring is slow: a 10 x 21-mode boundary took 555 s on one core. Expect a check to take 10 to 40
-minutes. It runs on GitHub Actions for every pull request (`.github/workflows/check.yml`: the base
+Scoring is slow and needs memory. Measured on 2 CPUs (VMEC++ uses one): the best geometrical design
+(10 x 21 modes) took 555 s, the best simple-to-build design (15 x 29) 315 s and more than 2 GB (it
+was killed at 2 GB; the peak sampled at 8 GB was 1.9 GB), an MHD-stable design (10 x 19) 206 s.
+Expect a check to take up to about 10 minutes, and give the sandbox 4 GB. It runs on GitHub Actions for every pull request (`.github/workflows/check.yml`: the base
 branch's checker, the pull request's files as data only) and in Thinkpool's sandbox from
 `docker/Dockerfile` (`thinkpool-prometheus-cst:1`, no network).
 
 ```sh
 docker build -t thinkpool-prometheus-cst:1 docker
-docker run --rm --network none -v "$PWD:/work" -w /work thinkpool-prometheus-cst:1 python -I checker/check_all.py
-docker run --rm --network none -v "$PWD:/work" -w /work thinkpool-prometheus-cst:1 python -m pytest tests -q -m "not slow"
+docker run --rm --network none -m 4g -v "$PWD:/work" -w /work thinkpool-prometheus-cst:1 python -I checker/check_all.py
+docker run --rm --network none -m 4g -v "$PWD:/work" -w /work thinkpool-prometheus-cst:1 python -m pytest tests -q -m "not slow"
 ```
 
 Where to start: `baselines/leaderboard_start.py` fetches the current best design for a problem, and
-`baselines/polish.py` is a simple local search to beat. `SOLVING.md` is the long version: what is
+`baselines/polish.py` is a simple local search to beat. Its first run here, 10 minutes on 2 CPUs
+from the geometrical record, found one low-fidelity improvement that high-fidelity VMEC++ then
+couldn't solve: it scored nothing. The baseline sets no record; that is the point of the pool. `SOLVING.md` is the long version: what is
 known, what the problems' structure suggests, and tasks a swarm can split.
 
 ## Licence and sources

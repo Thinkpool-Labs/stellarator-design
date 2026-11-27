@@ -60,7 +60,9 @@ from a region where it bends or thins, or from a design family nobody has tried.
    resolution matters. Measure the best score as a function of (M, N).
 3. **Low fidelity for search, high for confirmation.** Low-fidelity VMEC++ is many times faster.
    Measure how often it agrees with high fidelity on feasibility near the record (Task 2), and keep
-   only candidates whose margin survives the difference.
+   only candidates whose margin survives the difference. The first polish run here found the
+   failure mode at once: a step low-fidelity VMEC++ accepted made high-fidelity VMEC++ fail to
+   converge (`RuntimeError: VMEC++ did not converge`), so the design scored nothing.
 4. **Near-axis initialisation for the QI problems.** `constellaration.initial_guess.generate_nae`
    (and pyQSC/pyQIC) build boundaries from a near-axis expansion that are QI to leading order by
    construction. Seeding from a sweep over its parameters (nfp, elongation, mirror ratio, iota) may

@@ -1,0 +1,32 @@
+{
+ "problem": "geometrical",
+ "boundary": {
+  "r_cos": [
+   [
+    0.0,
+    1.0,
+    0.06666666666666665
+   ],
+   [
+    0.0,
+    0.21213203435596428,
+    -0.07071067811865477
+   ]
+  ],
+  "z_sin": [
+   [
+    0.0,
+    0.0,
+    -0.06666666666666665
+   ],
+   [
+    0.0,
+    0.21213203435596428,
+    0.07071067811865477
+   ]
+  ],
+  "n_field_periods": 3,
+  "is_stellarator_symmetric": true
+ },
+ "notes": "CI probe: expected to set no record"
+}

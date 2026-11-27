@@ -28,6 +28,13 @@ from front import gain, hypervolume, to_min  # noqa: E402
 FIX = Path(__file__).resolve().parent / "fixtures"
 
 
+def fixture(name):
+    f = FIX / name
+    if not f.exists():
+        pytest.skip("run python tests/fetch_fixtures.py first (leaderboard designs are not redistributed here)")
+    return json.loads(f.read_text())
+
+
 def boundary(rows=3, cols=5, nfp=3):
     r = [[0.0] * cols for _ in range(rows)]
     z = [[0.0] * cols for _ in range(rows)]
@@ -137,7 +144,7 @@ def _pool_copy(tmp_path):
 
 @pytest.mark.slow
 def test_leaderboard_design_scores_as_the_leaderboard_said():
-    d = json.loads((FIX / "leaderboard-geometrical-top.json").read_text())
+    d = fixture("leaderboard-geometrical-top.json")
     out = check_all.score_child(json.dumps({"problem": d["problem"], "boundary": d["boundary"]}).encode())
     assert out["verdict"] == "VALID" and out["feasible"], out
     assert abs(out["score"] - d["leaderboard"]["score"]) < 1e-6, out
@@ -145,18 +152,18 @@ def test_leaderboard_design_scores_as_the_leaderboard_said():
 
 @pytest.mark.slow
 def test_a_leaderboard_front_point_scores_as_published_and_adds_nothing():
-    d = json.loads((FIX / "leaderboard-mhd-front-point.json").read_text())
+    d = fixture("leaderboard-mhd-front-point.json")
     out = check_all.score_child(json.dumps({"problem": d["problem"], "boundary": d["boundary"]}).encode())
     assert out["verdict"] == "VALID" and out["feasible"], out
-    assert np.allclose(out["point"], d["leaderboard"]["point"], rtol=1e-9), out
     rec = json.loads((ROOT / "RECORDS.json").read_text())["records"]["mhd_stable"]
+    assert any(np.allclose(out["point"], p, rtol=1e-9) for p in rec["front"]), out
     assert gain([to_min(p) for p in rec["front"]], to_min(out["point"])) <= 1e-9
 
 
 @pytest.mark.slow
 def test_a_better_design_passes_and_a_worse_one_fails(tmp_path):
     copy = _pool_copy(tmp_path)
-    d = json.loads((FIX / "leaderboard-geometrical-top.json").read_text())
+    d = fixture("leaderboard-geometrical-top.json")
     (copy / "designs" / "try.json").write_text(json.dumps({"problem": "geometrical", "boundary": d["boundary"]}))
     run = lambda: subprocess.run([sys.executable, "-I", "checker/check_all.py"], cwd=copy, capture_output=True, text=True)
     r = run()  # the leaderboard's own best is not a record here

@@ -1,0 +1,52 @@
+name: attempts
+# Validates an addition to the attempts log: work that set no record but is worth keeping. Like the
+# record check, this runs the base branch's own files (pull_request_target), copies only the pull
+# request's new JSON files from attempts/ into the trusted checkout (.github/pr_gate.py), and executes
+# nothing from the pull request. It awards nothing: a maintainer reads the attempt and merges it.
+# A pull request that mixes a record and an attempt is refused by both gates: send them separately.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths: ["attempts/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: attempts-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  attempts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      BASE_REPO: ${{ github.repository }}
+      POOL: ${{ github.event.repository.name }}
+    steps:
+      - name: Trusted checkout (base branch)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+          persist-credentials: false
+      - name: Contribution checkout (data only, never run)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Bring in the base commit
+        run: git -C pr fetch --no-tags "https://github.com/$BASE_REPO" "$BASE_SHA"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Gate (only new JSON files in attempts/)
+        run: python -I trusted/.github/pr_gate.py trusted pr attempts "$BASE_SHA" "$HEAD_SHA"
+      - name: Validate the log
+        working-directory: trusted
+        run: timeout 60 python -I checker/attempts_check.py "$POOL"

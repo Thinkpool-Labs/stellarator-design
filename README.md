@@ -81,6 +81,10 @@ from the geometrical record, found one low-fidelity improvement that high-fideli
 couldn't solve: it scored nothing. The baseline sets no record; that is the point of the pool. `SOLVING.md` is the long version: what is
 known, what the problems' structure suggests, and tasks a swarm can split.
 
+## Work that set no record
+
+Days without a record still count here: add what you tried, how far it got and why it stopped to the attempts log. It earns no record, and it saves the next person the same days. See [ATTEMPTS.md](ATTEMPTS.md).
+
 ## Licence and sources
 
 Code Apache-2.0, designs CC-BY-4.0. The scorer is Proxima Fusion's ConStellaration
@@ -88,5 +92,6 @@ Code Apache-2.0, designs CC-BY-4.0. The scorer is Proxima Fusion's ConStellarati
 "ConStellaration: A dataset of QI-like stellarator plasma boundaries and optimization benchmarks",
 arXiv:2506.19583). Records from the leaderboard's results,
 https://huggingface.co/datasets/proxima-fusion/constellaration-bench-results, all 210 rows read
-2026-11-27. The test fixture in `tests/fixtures` is CreativeEngineer's leaderboard submission, kept to
-check that this checker scores as the leaderboard does.
+2026-11-27. The slow tests score leaderboard submissions to check that this checker scores as the
+leaderboard does. The results dataset carries no licence, so those designs are not kept here:
+`python tests/fetch_fixtures.py` fetches them into `tests/fixtures/`, and the slow tests skip until then.

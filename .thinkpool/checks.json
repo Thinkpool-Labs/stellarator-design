@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "runner": "docker",
+  "auto_run": true,
+  "checks": [
+    {
+      "name": "designs",
+      "description": "Every new design in designs/ is scored by Proxima Fusion's ConStellaration scorer (constellaration 0.2.6) and one beats RECORDS.json for its problem. One design per contribution; a high-resolution design takes 10 to 40 minutes. Runs in docker/Dockerfile's image, built once by the host.",
+      "image": "thinkpool-prometheus-cst:1",
+      "command": "python -I checker/check_all.py",
+      "mode": "fix",
+      "timeout_s": 3000,
+      "protected_paths": [
+        "checker/**",
+        "tests/**",
+        "baselines/**",
+        "docker/**",
+        ".github/**",
+        ".thinkpool/**",
+        "RECORDS.json",
+        "requirements.txt",
+        ".deps/**",
+        "**/*.py",
+        "**/*.pth",
+        ".gitattributes",
+        "pytest.ini"
+      ],
+      "pass_codes": [
+        0
+      ],
+      "network": false,
+      "share_output": true,
+      "limits": {
+        "memory_mb": 2048,
+        "cpus": 2,
+        "pids": 256,
+        "output_kb": 256,
+        "tmp_mb": 1024
+      }
+    }
+  ]
+}

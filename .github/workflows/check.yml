@@ -1,0 +1,67 @@
+name: check
+# Judges a contribution with the base branch's own checker. pull_request_target runs this file as it
+# is on the base branch, so a pull request can't change what judges it. Nothing from the pull request
+# is executed: .github/pr_gate.py copies only its new JSON files from the data directory into the
+# trusted checkout. The repository holds no secrets, and the token is read-only.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    # An addition to the attempts log alone is judged by attempts.yml, not by the record check.
+    paths-ignore: ["attempts/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DATA_DIR: designs
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      BASE_REPO: ${{ github.repository }}
+    steps:
+      - name: Trusted checkout (base branch)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+          persist-credentials: false
+      - name: Contribution checkout (data only, never run)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Bring in the base commit
+        run: git -C pr fetch --no-tags "https://github.com/$BASE_REPO" "$BASE_SHA"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: trusted/requirements.txt
+      - name: Install the scorer's build dependencies (VMEC++ and booz_xform build from source)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential cmake libnetcdf-dev
+      - name: Install the checker's pinned dependencies
+        run: pip install -r trusted/requirements.txt
+      - name: Without the contribution the check must fail (else RECORDS.json is behind)
+        working-directory: trusted
+        run: |
+          if timeout 600 python -I checker/check_all.py > /dev/null; then
+            echo "::error::The check passes without this pull request: RECORDS.json is behind the merged results. A maintainer must update it first."
+            exit 1
+          fi
+      - name: Gate (only new JSON files in the data directory)
+        run: python trusted/.github/pr_gate.py trusted pr "$DATA_DIR" "$BASE_SHA" "$HEAD_SHA"
+      - name: Check
+        working-directory: trusted
+        env:
+          OMP_NUM_THREADS: "2"
+        run: timeout 4800 python -I checker/check_all.py

@@ -144,6 +144,16 @@ def test_leaderboard_design_scores_as_the_leaderboard_said():
 
 
 @pytest.mark.slow
+def test_a_leaderboard_front_point_scores_as_published_and_adds_nothing():
+    d = json.loads((FIX / "leaderboard-mhd-front-point.json").read_text())
+    out = check_all.score_child(json.dumps({"problem": d["problem"], "boundary": d["boundary"]}).encode())
+    assert out["verdict"] == "VALID" and out["feasible"], out
+    assert np.allclose(out["point"], d["leaderboard"]["point"], rtol=1e-9), out
+    rec = json.loads((ROOT / "RECORDS.json").read_text())["records"]["mhd_stable"]
+    assert gain([to_min(p) for p in rec["front"]], to_min(out["point"])) <= 1e-9
+
+
+@pytest.mark.slow
 def test_a_better_design_passes_and_a_worse_one_fails(tmp_path):
     copy = _pool_copy(tmp_path)
     d = json.loads((FIX / "leaderboard-geometrical-top.json").read_text())
